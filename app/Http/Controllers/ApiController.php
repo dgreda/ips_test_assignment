@@ -10,8 +10,8 @@ class ApiController extends Controller
 {
     // Todo: Module reminder assigner
 
-    private function exampleCustomer(){
-
+    private function exampleCustomer()
+    {
         $infusionsoft = new InfusionsoftHelper();
 
         $uniqid = uniqid();
