@@ -1,47 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\InfusionsoftHelper;
+use App\Services\InfusionsoftClient;
+use Illuminate\Http\JsonResponse;
 use Request;
 use Storage;
 use Response;
 
 class InfusionsoftController extends Controller
 {
+    /**
+     * @var InfusionsoftClient
+     */
+    private $infusionsoftClient;
+
+    /**
+     * @param InfusionsoftClient $infusionsoftClient
+     */
+    public function __construct(InfusionsoftClient $infusionsoftClient)
+    {
+        $this->infusionsoftClient = $infusionsoftClient;
+    }
+
     public function authorizeInfusionsoft()
     {
-        return (new InfusionsoftHelper())->authorize();
+        return $this->infusionsoftClient->authorize();
     }
 
-    public function testInfusionsoftIntegrationGetEmail($email)
+    public function testInfusionsoftIntegrationGetEmail(string $email): JsonResponse
     {
-        $infusionsoft = new InfusionsoftHelper();
-
-        return Response::json($infusionsoft->getContact($email));
+        return Response::json($this->infusionsoftClient->getContact($email));
     }
 
-    public function testInfusionsoftIntegrationAddTag($contact_id, $tag_id)
+    public function testInfusionsoftIntegrationAddTag(string $contact_id, string $tag_id): JsonResponse
     {
-        $infusionsoft = new InfusionsoftHelper();
-
-        return Response::json($infusionsoft->addTag($contact_id, $tag_id));
+        return Response::json($this->infusionsoftClient->addTag($contact_id, $tag_id));
     }
 
-    public function testInfusionsoftIntegrationGetAllTags()
+    public function testInfusionsoftIntegrationGetAllTags(): JsonResponse
     {
-        $infusionsoft = new InfusionsoftHelper();
-
-        return Response::json($infusionsoft->getAllTags());
+        return Response::json($this->infusionsoftClient->getAllTags());
     }
 
-    public function testInfusionsoftIntegrationCreateContact()
+    public function testInfusionsoftIntegrationCreateContact(): JsonResponse
     {
-        $infusionsoft = new InfusionsoftHelper();
-
-        return Response::json($infusionsoft->createContact([
-            'Email' => uniqid().'@test.com',
-            "_Products" => 'ipa,iea'
+        return Response::json($this->infusionsoftClient->createContact([
+            'Email'     => uniqid() . '@test.com',
+            "_Products" => 'ipa,iea',
         ]));
     }
 }

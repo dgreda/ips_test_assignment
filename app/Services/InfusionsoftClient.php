@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Http\Helpers;
+declare(strict_types=1);
+
+namespace App\Services;
 
 use Infusionsoft;
+use Infusionsoft\InfusionsoftCollection;
 use Log;
 use Storage;
 use Request;
 
-class InfusionsoftHelper
+class InfusionsoftClient
 {
-    private $infusionsoft;
-
     public function __construct()
     {
         if (Storage::exists('inf_token')) {
@@ -20,7 +21,7 @@ class InfusionsoftHelper
         }
     }
 
-    public function authorize()
+    public function authorize(): string
     {
         if (Request::has('code')) {
             Infusionsoft::requestAccessToken(Request::get('code'));
@@ -36,49 +37,53 @@ class InfusionsoftHelper
         return '<a href="' . Infusionsoft::getAuthorizationUrl() . '">Authorize Infusionsoft</a>';
     }
 
-    public function getAllTags()
+    public function getAllTags(): ?InfusionsoftCollection
     {
         try {
             return Infusionsoft::tags()->all();
         } catch (\Exception $e) {
             Log::error((string) $e);
-            return false;
+
+            return null;
         }
     }
 
-    public function getContact($email)
+    public function getContact(string $email): ?array
     {
         $fields = [
             'Id',
             'Email',
             'Groups',
-            "_Products"
+            "_Products",
         ];
 
         try {
             return Infusionsoft::contacts('xml')->findByEmail($email, $fields)[0];
         } catch (\Exception $e) {
             Log::error((string) $e);
-            return false;
+
+            return null;
         }
     }
 
-    public function addTag($contact_id, $tag_id)
+    public function addTag(string $contact_id, string $tag_id): bool
     {
         try {
             return Infusionsoft::contacts('xml')->addToGroup($contact_id, $tag_id);
         } catch (\Exception $e) {
             Log::error((string) $e);
+
             return false;
         }
     }
 
-    public function createContact($data)
+    public function createContact(array $data)
     {
         try {
             return Infusionsoft::contacts('xml')->add($data);
         } catch (\Exception $e) {
             Log::error((string) $e);
+
             return false;
         }
     }
