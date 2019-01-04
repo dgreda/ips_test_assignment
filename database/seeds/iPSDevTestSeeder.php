@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Seeder;
 use App\Module;
 
@@ -10,25 +12,25 @@ class iPSDevTestSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
 
-        for ($i = 1; $i <= 7; $i++){
+        for ($i = 1; $i <= 7; $i++) {
             Module::insert([
                 [
                     'course_key' => 'ipa',
-                    'name' => 'IPA Module ' . $i
+                    'name'       => 'IPA Module ' . $i,
                 ],
 
                 [
                     'course_key' => 'iea',
-                    'name' => 'IEA Module ' . $i
+                    'name'       => 'IEA Module ' . $i,
                 ],
 
                 [
                     'course_key' => 'iaa',
-                    'name' => 'IAA Module ' . $i
-                ]
+                    'name'       => 'IAA Module ' . $i,
+                ],
             ]);
         }
 

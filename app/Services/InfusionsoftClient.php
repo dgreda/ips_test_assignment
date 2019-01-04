@@ -66,10 +66,10 @@ class InfusionsoftClient
         }
     }
 
-    public function addTag(string $contact_id, string $tag_id): bool
+    public function addTag(int $contactId, int $tagId): bool
     {
         try {
-            return Infusionsoft::contacts('xml')->addToGroup($contact_id, $tag_id);
+            return Infusionsoft::contacts('xml')->addToGroup($contactId, $tagId);
         } catch (\Exception $e) {
             Log::error((string) $e);
 

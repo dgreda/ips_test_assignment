@@ -1,0 +1,30 @@
+version: '2'
+
+services:
+  ips_test_mariadb:
+    container_name: ips_test_mariadb
+    image: 'bitnami/mariadb:latest'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_USER=ips_test
+      - MARIADB_DATABASE=ips_test
+      - MARIADB_PASSWORD=jHQVADxhwtja9
+    ports:
+      - 3306:3306
+
+  ips_test_app:
+    container_name: ips_test_app
+    image: 'bitnami/laravel:latest'
+    labels:
+      kompose.service.type: nodeport
+    environment:
+      - DB_HOST=ips_test_mariadb
+      - DB_USERNAME=ips_test
+      - DB_DATABASE=ips_test
+      - DB_PASSWORD=jHQVADxhwtja9
+    depends_on:
+      - ips_test_mariadb
+    ports:
+      - 3000:3000
+    volumes:
+      - ./:/app
