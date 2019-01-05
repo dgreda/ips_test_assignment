@@ -8,7 +8,7 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
       - MARIADB_USER=ips_test
       - MARIADB_DATABASE=ips_test
-      - MARIADB_PASSWORD=jHQVADxhwtja9
+      - MARIADB_PASSWORD=jHQVADxhwtja9 # generated password that matches the setup from .env.example
     ports:
       - 3306:3306
 
@@ -21,7 +21,7 @@ services:
       - DB_HOST=ips_test_mariadb
       - DB_USERNAME=ips_test
       - DB_DATABASE=ips_test
-      - DB_PASSWORD=jHQVADxhwtja9
+      - DB_PASSWORD=jHQVADxhwtja9 # generated password that matches the setup from .env.example
     depends_on:
       - ips_test_mariadb
     ports:

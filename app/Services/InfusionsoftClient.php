@@ -10,7 +10,7 @@ use Log;
 use Storage;
 use Request;
 
-class InfusionsoftClient
+class InfusionsoftClient implements InfusionsoftClientInterface
 {
     public function __construct()
     {
@@ -37,15 +37,9 @@ class InfusionsoftClient
         return '<a href="' . Infusionsoft::getAuthorizationUrl() . '">Authorize Infusionsoft</a>';
     }
 
-    public function getAllTags(): ?InfusionsoftCollection
+    public function getAllTags(): InfusionsoftCollection
     {
-        try {
-            return Infusionsoft::tags()->all();
-        } catch (\Exception $e) {
-            Log::error((string) $e);
-
-            return null;
-        }
+        return Infusionsoft::tags()->all();
     }
 
     public function getContact(string $email): ?array
@@ -57,24 +51,12 @@ class InfusionsoftClient
             "_Products",
         ];
 
-        try {
-            return Infusionsoft::contacts('xml')->findByEmail($email, $fields)[0];
-        } catch (\Exception $e) {
-            Log::error((string) $e);
-
-            return null;
-        }
+        return Infusionsoft::contacts('xml')->findByEmail($email, $fields)[0];
     }
 
     public function addTag(int $contactId, int $tagId): bool
     {
-        try {
-            return Infusionsoft::contacts('xml')->addToGroup($contactId, $tagId);
-        } catch (\Exception $e) {
-            Log::error((string) $e);
-
-            return false;
-        }
+        return Infusionsoft::contacts('xml')->addToGroup($contactId, $tagId);
     }
 
     public function createContact(array $data)

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Helpers\InfusionsoftHelper;
 use App\Services\InfusionsoftClient;
 use Illuminate\Http\JsonResponse;
-use Request;
-use Storage;
 use Response;
 
 class InfusionsoftController extends Controller
@@ -36,9 +33,9 @@ class InfusionsoftController extends Controller
         return Response::json($this->infusionsoftClient->getContact($email));
     }
 
-    public function testInfusionsoftIntegrationAddTag(string $contact_id, string $tag_id): JsonResponse
+    public function testInfusionsoftIntegrationAddTag(int $contactId, int $tagId): JsonResponse
     {
-        return Response::json($this->infusionsoftClient->addTag($contact_id, $tag_id));
+        return Response::json($this->infusionsoftClient->addTag($contactId, $tagId));
     }
 
     public function testInfusionsoftIntegrationGetAllTags(): JsonResponse

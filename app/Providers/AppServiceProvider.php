@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\InfusionsoftClient;
+use App\Services\InfusionsoftClientInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(InfusionsoftClientInterface::class, function ($app) {
+            return new InfusionsoftClient();
+        });
     }
 }
