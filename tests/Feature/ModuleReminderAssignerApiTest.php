@@ -18,16 +18,16 @@ class ModuleReminderAssignerApiTest extends TestCase
     /**
      * @dataProvider dataProvider
      *
-     * @param array  $customerData
-     * @param bool   $isSuccess
-     * @param int    $expectedTagId
-     * @param string $expectedMessage
-     * @param int    $expectedCode
+     * @param array    $customerData
+     * @param bool     $isSuccess
+     * @param int|null $expectedTagId
+     * @param string   $expectedMessage
+     * @param int      $expectedCode
      */
     public function testAssignReminderTag(
         array $customerData,
         bool $isSuccess,
-        int $expectedTagId,
+        ?int $expectedTagId,
         string $expectedMessage,
         int $expectedCode
     ): void {
@@ -42,10 +42,12 @@ class ModuleReminderAssignerApiTest extends TestCase
             ->willReturn($customerData)
             ->shouldBeCalledTimes(1);
 
-        $infusionsoftClientProphecy
-            ->addTag($customerData['Id'], $expectedTagId)
-            ->willReturn($isSuccess)
-            ->shouldBeCalledTimes(1);
+        if ($expectedTagId !== null) {
+            $infusionsoftClientProphecy
+                ->addTag($customerData['Id'], $expectedTagId)
+                ->willReturn($isSuccess)
+                ->shouldBeCalledTimes(1);
+        }
 
         $this->app->instance(InfusionsoftClientInterface::class, $infusionsoftClientProphecy->reveal());
 
@@ -144,6 +146,17 @@ class ModuleReminderAssignerApiTest extends TestCase
                 'expectedMessage' => "Adding final tag 'Module reminders completed' failed",
                 'expectedCode'    => 422,
             ],
+            [
+                'customerData'    => [
+                    '_Products' => 'iea,ipa',
+                    'Groups'    => self::FINAL_REMINDER_TAG_ID,
+                ],
+                'isSuccess'       => false,
+                'expectedTagId'   => null,
+                'expectedMessage' => "Final tag 'Module reminders completed' already attached. Request failed",
+                'expectedCode'    => 422,
+            ],
+
         ];
     }
 }

@@ -4,58 +4,61 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Module;
+use App\Repositories\ModulesRepository;
+use App\Repositories\TagsRepository;
 use App\Tag;
-use \DB;
 use RuntimeException;
 
 class ModuleReminderAssigner
 {
+    private const MAX_NUMBER_OF_MODULES = 7;
+
     /**
      * @var InfusionsoftClient
      */
     private $infusionsoftClient;
 
     /**
-     * @param InfusionsoftClient $infusionsoftClient
+     * @var TagsRepository
      */
-    public function __construct(InfusionsoftClientInterface $infusionsoftClient)
-    {
+    private $tagsRepository;
+
+    /**
+     * @var ModulesRepository
+     */
+    private $modulesRepository;
+
+    public function __construct(
+        InfusionsoftClientInterface $infusionsoftClient,
+        TagsRepository $tagsRepository,
+        ModulesRepository $modulesRepository
+    ) {
         $this->infusionsoftClient = $infusionsoftClient;
+        $this->tagsRepository     = $tagsRepository;
+        $this->modulesRepository  = $modulesRepository;
     }
 
     public function assignReminderTag(string $contactEmail): array
     {
-        $contact = $this->infusionsoftClient->getContact($contactEmail);
+        $moduleToAssign = null;
+        $finalTag       = $this->tagsRepository->getFinalTag();
+        $contact        = $this->infusionsoftClient->getContact($contactEmail);
+
         if (null === $contact) {
             throw new RuntimeException('Contact ' . $contactEmail . ' not found!');
         }
-        $moduleToAssign = null;
-        $courseKeys     = $this->getCourseKeys($contact);
-        $tagIds         = $this->getTagIds($contact);
 
-        foreach ($courseKeys as $courseKey) {
-            $highestCompletedModuleInCourse = $this->getHighestCompletedModuleByCourseKeyAndTagIds($courseKey, $tagIds);
-
-            if ($highestCompletedModuleInCourse === null) {
-                $moduleToAssign = $this->getFirstModuleByCourseKey($courseKey);
-                break;
-            }
-
-            $highestCompletedModuleName      = $highestCompletedModuleInCourse->name;
-            $highestCompletedModuleNameParts = explode(' ', $highestCompletedModuleName);
-            $highestCompletedModuleNumber    = (int) array_pop($highestCompletedModuleNameParts);
-            if ($highestCompletedModuleNumber < 7) {
-                $moduleToAssign = $this->getModuleByCourseKeyAndNumber(
-                    $courseKey,
-                    $highestCompletedModuleNumber + 1
-                );
-                break;
-            }
+        if ($this->hasFinalTag($contact, $finalTag)) {
+            return $this->returnResult(
+                false,
+                "Final tag 'Module reminders completed' already attached. Request"
+            );
         }
 
+        $moduleToAssign = $this->findModuleToAssign($contact);
+
         if ($moduleToAssign === null) {
-            $result = $this->infusionsoftClient->addTag($contact['Id'], $this->getFinalTag()->tag_id);
+            $result = $this->infusionsoftClient->addTag($contact['Id'], $finalTag->tag_id);
 
             return $this->returnResult($result, "Adding final tag 'Module reminders completed'");
         }
@@ -63,6 +66,44 @@ class ModuleReminderAssigner
         $result = $this->infusionsoftClient->addTag($contact['Id'], $moduleToAssign->tag->tag_id);
 
         return $this->returnResult($result, "Adding tag '" . $moduleToAssign->tag->name . "'");
+    }
+
+    private function findModuleToAssign(array $contact)
+    {
+        $moduleToAssign = null;
+        $courseKeys     = $this->extractCourseKeys($contact);
+        $tagIds         = $this->extractTagIds($contact);
+
+        foreach ($courseKeys as $courseKey) {
+            $highestCompletedModuleInCourse = $this->modulesRepository->getHighestCompletedModuleByCourseKeyAndTagIds(
+                $courseKey,
+                $tagIds
+            );
+
+            if ($highestCompletedModuleInCourse === null) {
+                $moduleToAssign = $this->modulesRepository->getFirstModuleByCourseKey($courseKey);
+                break;
+            }
+
+            $highestCompletedModuleNumber = $this->getHighestCompletedModuleNumber($highestCompletedModuleInCourse);
+
+            if ($highestCompletedModuleNumber < self::MAX_NUMBER_OF_MODULES) {
+                $moduleToAssign = $this->modulesRepository->getModuleByCourseKeyAndNumber(
+                    $courseKey,
+                    $highestCompletedModuleNumber + 1
+                );
+                break;
+            }
+        }
+
+        return $moduleToAssign;
+    }
+
+    private function getHighestCompletedModuleNumber($highestCompletedModuleInCourse): int
+    {
+        $highestCompletedModuleNameParts = explode(' ', $highestCompletedModuleInCourse->name);
+
+        return (int) array_pop($highestCompletedModuleNameParts);
     }
 
     private function returnResult($result, $messagePrefix): array
@@ -73,7 +114,7 @@ class ModuleReminderAssigner
         ];
     }
 
-    private function getCourseKeys(array $contact): array
+    private function extractCourseKeys(array $contact): array
     {
         $products = [];
 
@@ -84,7 +125,7 @@ class ModuleReminderAssigner
         return $products;
     }
 
-    private function getTagIds(array $contact): array
+    private function extractTagIds(array $contact): array
     {
         $tagIds = [];
 
@@ -95,49 +136,10 @@ class ModuleReminderAssigner
         return $tagIds;
     }
 
-    /**
-     * @param string $courseKey
-     * @param array  $tagIds
-     *
-     * @return \stdClass|null
-     */
-    private function getHighestCompletedModuleByCourseKeyAndTagIds(string $courseKey, array $tagIds)
+    private function hasFinalTag(array $contact, Tag $finalTag): bool
     {
-        if (empty($tagIds)) {
-            return null;
-        }
+        $tagIds = $this->extractTagIds($contact);
 
-        $result = DB::table('tags')
-            ->join('modules', 'tags.id', '=', 'modules.tag_id')
-            ->select('modules.*')
-            ->where('modules.course_key', $courseKey)
-            ->whereIn('tags.tag_id', $tagIds)
-            ->orderBy('modules.name', 'DESC')
-            ->first();
-
-        if ($result === null) {
-            return null;
-        }
-
-        return $result;
-    }
-
-    private function getFirstModuleByCourseKey(string $courseKey): Module
-    {
-        return Module::where('course_key', $courseKey)
-            ->orderBy('name', 'ASC')
-            ->first();
-    }
-
-    private function getModuleByCourseKeyAndNumber(string $courseKey, int $moduleNumber): Module
-    {
-        return Module::where('course_key', $courseKey)
-            ->where('name', strtoupper($courseKey) . ' Module ' . $moduleNumber)
-            ->first();
-    }
-
-    private function getFinalTag(): Tag
-    {
-        return Tag::where('name', 'Module reminders completed')->first();
+        return in_array($finalTag->tag_id, $tagIds);
     }
 }
