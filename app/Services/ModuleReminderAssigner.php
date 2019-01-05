@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Module;
 use App\Repositories\ModulesRepository;
 use App\Repositories\TagsRepository;
 use App\Tag;
@@ -68,7 +69,7 @@ class ModuleReminderAssigner
         return $this->returnResult($result, "Adding tag '" . $moduleToAssign->tag->name . "'");
     }
 
-    private function findModuleToAssign(array $contact)
+    private function findModuleToAssign(array $contact): ?Module
     {
         $moduleToAssign = null;
         $courseKeys     = $this->extractCourseKeys($contact);

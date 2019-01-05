@@ -1,3 +1,60 @@
+# IPS Test Application
+
+## Installation
+
+### Prerequisites
+
+To smoothly start app please make sure that you have locally installed:
+* Docker
+* docker-compose
+* PHP ^7.1.3
+
+### How-To
+
+Add following entries to your `/etc/hosts`:
+
+```
+127.0.0.1 ips_test_mariadb
+127.0.0.1 ips-test.local
+```
+
+Being in the project directory, copy the `.env.example` as `.env`:
+
+`cp .env.example .env`
+
+Configure missing values there like `APP_KEY` and Infusionsoft credentials named as:
+
+```
+INFUSIONSOFT_CLIENT_ID=
+INFUSIONSOFT_SECRET=
+```
+
+Then run:
+
+`composer install`
+
+Start the environment with help of Docker:
+
+`docker-compose up` or `docker-compose up -d`
+
+Please note that after starting with the later command (in background), you might need to wait few more second before running db:seed,
+since migrations are being run automatically in the Docker container after it started via the entrypoint but output is not visible.
+
+Now you also have to authorize your application to work with Infusionsoft. In order to do that visit your project under {PROJECT_URL}}/authorize_infusionsoft,
+most likely it will be:
+
+http://ips-test.local:3000/authorize_infusionsoft
+
+When it's authorized run the following command to seed DB tables (Infusionsoft connection required here):
+
+`docker exec -it ips_test_app sh -c "php artisan db:seed"`
+
+And that's it, you should be ready to go. Now run the tests:
+
+`phpunit`
+
+## Laravel
+
 <p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
 
 <p align="center">

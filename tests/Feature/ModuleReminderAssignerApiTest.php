@@ -156,7 +156,16 @@ class ModuleReminderAssignerApiTest extends TestCase
                 'expectedMessage' => "Final tag 'Module reminders completed' already attached. Request failed",
                 'expectedCode'    => 422,
             ],
-
+            [
+                'customerData'    => [
+                    '_Products' => 'iea,ipa,iaa',
+                    'Groups'    => '150,136,122',
+                ],
+                'isSuccess'       => true,
+                'expectedTagId'   => self::FINAL_REMINDER_TAG_ID,
+                'expectedMessage' => "Adding final tag 'Module reminders completed' succeeded",
+                'expectedCode'    => 201,
+            ],
         ];
     }
 }
